@@ -1,0 +1,63 @@
+name: Revert Specified Files on PR to Master
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  revert-specified-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Fetch all branches
+        run: git fetch --all
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Check for changes in specified files
+        id: check_changes
+        run: |
+          files=$(jq -r '.files[]' ignoredToMergeIntoMaster.json)
+          changes_detected=false
+          for file in $files; do
+            if git diff origin/master...HEAD --name-only | grep -q "$file"; then
+              changes_detected=true
+              break
+            fi
+          done
+          echo "changes_detected=$changes_detected" >> $GITHUB_ENV
+
+      - name: Revert changes in specified files
+        if: env.changes_detected == 'true'
+        run: |
+          files=$(jq -r '.files[]' ignoredToMergeIntoMaster.json)
+          for file in $files; do
+            if git diff origin/master...HEAD --name-only | grep -q "$file"; then
+              git checkout origin/master -- "$file"
+            fi
+          done
+          git commit -am "Revert changes in specified files"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
+      - name: Continue if no changes in specified files
+        if: env.changes_detected == 'false'
+        run: echo "No changes in specified files, proceeding with the workflow."
+
+  merge-pr:
+    needs: revert-specified-files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Merge PR
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge
+          git checkout -b merge-pr FETCH_HEAD
+          git push origin merge-pr:master
