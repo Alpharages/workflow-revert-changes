@@ -46,7 +46,7 @@ jobs:
             fi
           done
           git commit -am "Revert changes in specified files"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          git push origin HEAD:${{ github.event.pull_request.head.ref }} -f
 
       - name: Continue if no changes in specified files
         if: env.changes_detected == 'false'
