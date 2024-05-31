@@ -4,6 +4,8 @@ on:
   pull_request:
     branches:
       - master
+env:
+  base_ref: ${{ github.base_ref != '' && github.base_ref || 'master' }}
 
 jobs:
   revert-specified-files:
@@ -12,8 +14,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Fetch all branches
-        run: git fetch --all
+      - name: Fetch origin ${{ env.base_ref }}
+        run: git fetch origin ${{ env.base_ref }}
 
       - name: Install jq
         run: sudo apt-get install -y jq
@@ -24,7 +26,8 @@ jobs:
           files=$(jq -r '.files[]' ignoredToMergeIntoMaster.json)
           changes_detected=false
           for file in $files; do
-            if git diff origin/master...HEAD --name-only | grep -q "$file"; then
+            echo "file is $files"
+            if git diff origin/${{ env.base_ref }} --name-only | grep -q "$file"; then
               changes_detected=true
               break
             fi
@@ -34,10 +37,12 @@ jobs:
       - name: Revert changes in specified files
         if: env.changes_detected == 'true'
         run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
           files=$(jq -r '.files[]' ignoredToMergeIntoMaster.json)
           for file in $files; do
-            if git diff origin/master...HEAD --name-only | grep -q "$file"; then
-              git checkout origin/master -- "$file"
+            if git diff origin/${{ env.base_ref }} --name-only | grep -q "$file"; then
+              git checkout origin/${{ env.base_ref }} -- "$file"
             fi
           done
           git commit -am "Revert changes in specified files"
