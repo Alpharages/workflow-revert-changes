@@ -10,10 +10,19 @@ on:
       - synchronize
       - reopened
   workflow_dispatch: # Allow manual trigger
+    inputs:
+      baseBranch:
+        description: 'Base Branch'
+        required: true
+        type: string
+      refBranch:
+        description: 'Ref Branch'
+        required: true
+        type: string
 
 env:
-  BASE_REF: ${{ github.base_ref != '' && github.base_ref || 'master' }}
-  BRANCH_NAME: ${{ github.event.pull_request.head.ref || 'demo' }}
+  BASE_REF: ${{ github.base_ref != '' && github.base_ref || inputs.baseBranch || 'master' }}
+  BRANCH_NAME: ${{ github.event.pull_request.head.ref || inputs.refBranch || 'demo' }}
 
 jobs:
   revert-specified-files:
