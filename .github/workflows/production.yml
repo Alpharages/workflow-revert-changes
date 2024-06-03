@@ -20,14 +20,21 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
+      - name: Read ignored files from JSON
+        id: read_json
+        run: |
+            files=$(jq -c '.files[]' ignoredToMergeIntoMaster.json)
+            echo "files=$files" >> $GITHUB_ENV
+
       - name: Check for changes in specified files
         id: check_changes
         run: |
-          files=$(jq -r '.files[]' ignoredToMergeIntoMaster.json)
           changes_detected=false
-          for file in $files; do
-            echo "file is $files"
-            if git diff origin/${{ env.base_ref }} --name-only | grep -q "$file"; then
+          for item in ${{ env.files }}; do
+            file=$(echo $item | jq -r '.file')
+            path=$(echo $item | jq -r '.path')
+            full_path="$path/$file"
+            if git diff origin/${{ env.base_ref }} --name-only | grep -q "$full_path"; then
               changes_detected=true
               break
             fi
@@ -39,10 +46,12 @@ jobs:
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          files=$(jq -r '.files[]' ignoredToMergeIntoMaster.json)
-          for file in $files; do
-            if git diff origin/${{ env.base_ref }} --name-only | grep -q "$file"; then
-              git checkout origin/${{ env.base_ref }} -- "$file"
+          for item in ${{ env.files }}; do
+            file=$(echo $item | jq -r '.file')
+            path=$(echo $item | jq -r '.path')
+            full_path="$path/$file"
+            if git diff origin/${{ env.base_ref }} --name-only | grep -q "$full_path"; then
+              git checkout origin/${{ env.base_ref }} -- "$full_path"
             fi
           done
           git commit -am "Revert changes in specified files"

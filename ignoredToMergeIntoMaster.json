@@ -1,5 +1,8 @@
 {
   "files": [
-    "example.json"
+    {
+      "file": "assets.json",
+      "path": "assets"
+    }
   ]
 }
