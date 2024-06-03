@@ -19,9 +19,10 @@ jobs:
         with:
           ref: ${{ env.BRANCH_NAME }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0 # Fetch all history for all branches and tags
 
-      - name: Fetch origin ${{ env.base_ref }}
-        run: git fetch origin ${{ env.base_ref }}
+      - name: Fetch origin ${{ env.BASE_REF }}
+        run: git fetch origin ${{ env.BASE_REF }}
 
       - name: Install jq
         run: sudo apt-get install -y jq
@@ -57,7 +58,7 @@ jobs:
               git checkout origin/${{ env.BASE_REF }} -- "$full_path"
             fi
           done
-          git commit -am "Revert changes in specified files brnach ${{ env.BRANCH_NAME }}"
+          git commit -am "Revert changes in specified files on branch ${{ env.BRANCH_NAME }}"
           git push origin HEAD:${{ env.BRANCH_NAME }} -f
 
       - name: Continue if no changes in specified files
