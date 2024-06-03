@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - master
+      - develop
 env:
   base_ref: ${{ github.base_ref != '' && github.base_ref || 'master' }}
 
