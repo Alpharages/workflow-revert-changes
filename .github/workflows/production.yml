@@ -2,10 +2,15 @@ name: Revert Specified Files on PR to Master
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
     branches:
       - master
       - develop
+    types:
+      - opened
+      - synchronize
+      - reopened
+  workflow_dispatch: # Allow manual trigger
+
 env:
   BASE_REF: ${{ github.base_ref != '' && github.base_ref || 'master' }}
   BRANCH_NAME: ${{ github.event.pull_request.head.ref || 'demo' }}
