@@ -2,6 +2,7 @@ name: Revert Specified Files on PR to Master
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
     branches:
       - master
       - develop
